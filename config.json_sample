@@ -1,0 +1,13 @@
+{
+  "table": "nointernet",
+  "devices": [
+    {
+      "mac": "cc:ee:aa:01:5d:d5",
+      "name": "PC"
+    },
+    {
+      "mac": "10:56:aa:83:1f:15",
+      "name": "tablet"
+    }
+  ]
+}
