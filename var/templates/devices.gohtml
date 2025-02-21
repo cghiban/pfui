@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>...</title>
+        <style type="text/css">
+        tr.banned td { color: red; }
+        </style>
+    </head>
+    <body>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>IP</th>
+                <th>Mac addr.</th>
+                <th>Banned</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ range .Hosts }}
+            <tr class="{{if .Banned}}banned{{end}}">
+                    <td>{{ .Name }}</td>
+                    <td>{{ .IP }}</td>
+                    <td>{{ .EthAddr }}</td>
+                    <td>{{ .Banned }}</td>
+                    <td><a href="" data-mac="{{ .EthAddr }}" data-status="{{.Banned}}">toggle</a></td>
+                </tr>
+            {{ end }}
+        </tbody>
+    </table>
+    </body>
+    <script type="text/javascript">
+	    window.addEventListener("load", (event) => {
+            console.log("page is fully loaded");
+            const toggle = async(params) => {
+                const resp = await fetch(`/psui/devices?${params}`, {
+                    method: "PUT",
+                });
+                if (resp.ok) {
+                    return resp.json();
+                }
+                throw new Error("error updating device");
+            };
+            document.querySelectorAll("a").forEach((a) => {
+                a.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const device = e.target.getAttribute("data-mac");
+                    const st = e.target.getAttribute("data-status");
+                    let op = "add";
+                    if (st === "true") {
+                        op = "delete";
+                    }
+                    console.log(device, ":", st, ":", op);
+
+                    const params = new URLSearchParams({ op: op, mac:  device});
+                    toggle(params)
+                        .then((res) => {
+                            //console.log(res);
+                            if (res.status === "ok") {
+                                document.location.reload();
+                            } else {
+                                alert("Error: " + res.msg);
+                            }
+                        })
+                        .catch((err) => console.log(err));
+                });
+            });
+	    });
+
+    </script>
+</html>
