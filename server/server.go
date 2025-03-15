@@ -1,10 +1,13 @@
 package server
 
 import (
+	"encoding/base64"
 	"fmt"
+	"log"
 	"net/http"
 	"psui"
 	"psui/service"
+	"strings"
 	"text/template"
 
 	"github.com/gorilla/mux"
@@ -21,7 +24,7 @@ type Handlers struct {
 	UpdateDeviceHandler http.HandlerFunc
 }
 
-func NewHandlers(s service.Service, cfg psui.Config) Handlers {
+func NewHandlers(s service.Service) Handlers {
 
 	funcMap := template.FuncMap{}
 	t := template.Must(template.New("tmpls").Funcs(funcMap).ParseGlob(TMPLS_GLOB))
@@ -91,31 +94,82 @@ func UpdateDevice(w http.ResponseWriter, r *http.Request, s service.Service, t *
 		ip := host.IP.String()
 		fmt.Printf("op: %s; device: %s\n", op, ip)
 
-		out, err := s.PfCommand(op, ip)
-		fmt.Printf("out: %s\n", out)
+		_, err := s.PfCommand(op, ip)
 		if err != nil {
-			fmt.Printf("err: %s\n", err)
+			//fmt.Printf("err: %s\n", err)
+			fmt.Printf("can't update device: %s\n", err)
 			Error(w,
 				map[string]string{"status": "error", "msg": "can't update device"},
 				http.StatusInternalServerError,
 			)
-			fmt.Printf("can't update device: %s\n", err)
 			return
-
 		}
 	}
 
 	Success(w, map[string]string{"status": "ok"}, http.StatusOK)
 }
 
-func NewRouter(h Handlers) *mux.Router {
+func NewRouter(h Handlers, cfg psui.Config) *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
-
 	router.HandleFunc("/ping", h.Ping).Methods("GET")
-	router.HandleFunc("/psui/devices", h.DevicesHandler).Methods("GET")
-	router.HandleFunc("/psui/devices", h.UpdateDeviceHandler).Methods("PUT")
+
+	auth := cfg.Auth
+	if auth != nil && auth.User != "" && auth.Pass != "" {
+		router.HandleFunc("/psui/devices", basicAuth(auth.User, auth.Pass)(h.DevicesHandler)).Methods("GET")
+		router.HandleFunc("/psui/devices", basicAuth(auth.User, auth.Pass)(h.UpdateDeviceHandler)).Methods("PUT")
+	} else {
+		router.HandleFunc("/psui/devices", h.DevicesHandler).Methods("GET")
+		router.HandleFunc("/psui/devices", h.UpdateDeviceHandler).Methods("PUT")
+	}
+
+	router.Use(loggingMiddleware)
 
 	return router
+}
+
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Do stuff here
+		log.Println(r.Method, r.RequestURI)
+		// Call the next handler, which can be another middleware in the chain, or the final handler.
+		next.ServeHTTP(w, r)
+	})
+}
+
+func basicAuth(username, password string) func(http.HandlerFunc) http.HandlerFunc {
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			auth := r.Header.Get("Authorization")
+			if auth == "" {
+				w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			parts := strings.Split(auth, " ")
+			if len(parts) != 2 || parts[0] != "Basic" {
+				w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			payload, err := base64.StdEncoding.DecodeString(parts[1])
+			if err != nil {
+				w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			pair := strings.SplitN(string(payload), ":", 2)
+			if len(pair) != 2 || pair[0] != username || pair[1] != password {
+				w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			next(w, r)
+		})
+	}
 }
 
 func Pf(w http.ResponseWriter, r *http.Request, s service.Service) {

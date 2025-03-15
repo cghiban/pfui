@@ -4,7 +4,7 @@
 This a simple UI for `pf` to block devices on the LAN.
 This works by adding/removing a host from a PF table (`nointernet` in the pf.conf example below).
 
-### configure PF
+#### configure PF
 
 ```pf.conf
 
@@ -16,11 +16,15 @@ block out quick to <nointernet>
 
 ```
 
-### configure the hosts you want to block in `config.json`:
+Configure the hosts you want to block in `config.json`:
 
 ```json
 {
   "table": "nointernet",
+  "auth": {
+    "user": "xxx",
+    "pass": "zzz"
+  },
   "devices": [
     {
       "mac": "cc:ee:aa:01:5d:d5",
@@ -33,13 +37,3 @@ block out quick to <nointernet>
   ]
 }
 ```
-
-Run the tool and open the browser at the routers's internal IP:
-
-http://192.168.1.1:3000/psui/devices
-
-
-### TODO:
-    [] - rc file
-    [] - embed the html file
-    [] - option to ignode the devices from the config file and display all active LAN devices

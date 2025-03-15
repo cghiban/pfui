@@ -8,7 +8,7 @@ import (
 )
 
 type Service struct {
-	cfg        psui.Config
+	Cfg        psui.Config
 	devicesMap map[string]string
 }
 
@@ -18,7 +18,7 @@ func NewService(cfg psui.Config) Service {
 		dm[d.Mac] = d.Name
 	}
 	return Service{
-		cfg:        cfg,
+		Cfg:        cfg,
 		devicesMap: dm,
 	}
 }
@@ -31,7 +31,7 @@ func (s Service) GetHosts(filtered bool) ([]psui.Host, error) {
 
 	pf := psui.PF{}
 	banned_ips := []string{}
-	banned_ips, err = pf.TableShow(s.cfg.PFTable)
+	banned_ips, err = pf.TableShow(s.Cfg.PFTable)
 
 	out := []psui.Host{}
 	var name string
@@ -83,18 +83,18 @@ func (s Service) PfCommand(cmd string, args ...string) ([]string, error) {
 	case "tables":
 		output, err = pf.Tables()
 	case "table":
-		output, err = pf.TableShow(s.cfg.PFTable)
+		output, err = pf.TableShow(s.Cfg.PFTable)
 	case "add":
 		if len(args) != 1 {
 			err = errors.New("needs and arg: ip")
 		} else {
-			err = pf.TableAddEntry(s.cfg.PFTable, args[0])
+			err = pf.TableAddEntry(s.Cfg.PFTable, args[0])
 		}
 	case "delete":
 		if len(args) != 1 {
 			err = errors.New("needs an arg: ip")
 		} else {
-			err = pf.TableDeleteEntry(s.cfg.PFTable, args[0])
+			err = pf.TableDeleteEntry(s.Cfg.PFTable, args[0])
 		}
 	default:
 		err = errors.New("invalid PF command")

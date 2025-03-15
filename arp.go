@@ -50,7 +50,7 @@ func Parse(arp_out []byte) ([]Host, error) {
 			continue
 		}
 		hosts = append(hosts, h)
-		fmt.Println("»", i, line, h) // Println will add back the final '\n'
+		//fmt.Println("»", i, line, h) // Println will add back the final '\n'
 		i++
 	}
 	if err := scanner.Err(); err != nil {

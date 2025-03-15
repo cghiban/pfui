@@ -11,9 +11,15 @@ type Device struct {
 	Mac  string `json:"mac"`
 }
 
+type BasicAuth struct {
+	User string `json:"user"`
+	Pass string `json:"pass"`
+}
+
 type Config struct {
-	PFTable string   `json:"table"`
-	Devices []Device `json:"devices"`
+	Auth    *BasicAuth `json:"auth"`
+	PFTable string     `json:"table"`
+	Devices []Device   `json:"devices"`
 }
 
 func (cfg *Config) Load(file string) error {

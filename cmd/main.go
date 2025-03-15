@@ -28,20 +28,20 @@ func main() {
 		port = "3000"
 	}
 
-	router := server.NewRouter(server.NewHandlers(svc, *cfg))
+	router := server.NewRouter(server.NewHandlers(svc), *cfg)
 
 	srv := &http.Server{
 		Addr: fmt.Sprintf("0.0.0.0:%s", port),
 		// Good practice to set timeouts to avoid Slowloris attacks.
-		WriteTimeout: time.Second * 5,
-		ReadTimeout:  time.Second * 5,
-		IdleTimeout:  time.Second * 60,
+		WriteTimeout: time.Second * 2,
+		ReadTimeout:  time.Second * 2,
+		IdleTimeout:  time.Second * 30,
 		Handler:      router, // Pass our instance of gorilla/mux in.
 	}
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
-			log.Println(err)
+			log.Fatal(err)
 		}
 	}()
 
