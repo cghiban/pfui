@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"psui"
-	"psui/service"
+	psui "pfui"
+	"pfui/service"
 	"strings"
 	"text/template"
 

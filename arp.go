@@ -1,4 +1,4 @@
-package psui
+package pfui
 
 import (
 	"bufio"

@@ -3,16 +3,16 @@ package service
 import (
 	"errors"
 	"fmt"
-	"psui"
+	"pfui"
 	"slices"
 )
 
 type Service struct {
-	Cfg        psui.Config
+	Cfg        pfui.Config
 	devicesMap map[string]string
 }
 
-func NewService(cfg psui.Config) Service {
+func NewService(cfg pfui.Config) Service {
 	dm := map[string]string{}
 	for _, d := range cfg.Devices {
 		dm[d.Mac] = d.Name
@@ -23,17 +23,17 @@ func NewService(cfg psui.Config) Service {
 	}
 }
 
-func (s Service) GetHosts(filtered bool) ([]psui.Host, error) {
-	all, err := psui.ExecArp()
+func (s Service) GetHosts(filtered bool) ([]pfui.Host, error) {
+	all, err := pfui.ExecArp()
 	if err != nil {
-		return []psui.Host{}, err
+		return []pfui.Host{}, err
 	}
 
-	pf := psui.PF{}
+	pf := pfui.PF{}
 	banned_ips := []string{}
 	banned_ips, err = pf.TableShow(s.Cfg.PFTable)
 
-	out := []psui.Host{}
+	out := []pfui.Host{}
 	var name string
 	var exists bool
 	for _, h := range all {
@@ -75,7 +75,7 @@ func (s Service) PfCommand(cmd string, args ...string) ([]string, error) {
 		return []string{}, fmt.Errorf("invalid command received: %s", cmd)
 	}
 
-	pf := psui.PF{}
+	pf := pfui.PF{}
 	var err error
 
 	output := []string{}

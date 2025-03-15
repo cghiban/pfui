@@ -7,16 +7,16 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"psui"
-	"psui/server"
-	"psui/service"
+	"pfui"
+	"pfui/server"
+	"pfui/service"
 	"time"
 )
 
 func main() {
 
 	var err error
-	cfg := &psui.Config{}
+	cfg := &pfui.Config{}
 	err = cfg.Load("config.json")
 	if err != nil {
 		log.Fatalf("err loading config file: %s", err)

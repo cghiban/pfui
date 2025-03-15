@@ -1,4 +1,4 @@
-module psui
+module pfui
 
 go 1.23.2
 
