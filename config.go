@@ -17,8 +17,8 @@ type BasicAuth struct {
 }
 
 type Config struct {
-	Auth    *BasicAuth `json:"auth"`
 	PFTable string     `json:"table"`
+	Auth    *BasicAuth `json:"auth"`
 	Devices []Device   `json:"devices"`
 }
 
@@ -27,9 +27,6 @@ func (cfg *Config) Load(file string) error {
 	if err != nil {
 		return fmt.Errorf("can't read config file: %w", err)
 	}
-	fmt.Printf("%s\n", contents)
-	//x := Config{}
+	//fmt.Printf("%s\n", contents)
 	return json.Unmarshal(contents, cfg)
-	// fmt.Printf("%+v\n", x)
-	// return err
 }

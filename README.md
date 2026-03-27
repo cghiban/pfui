@@ -21,10 +21,6 @@ Configure the hosts you want to block in `config.json`:
 ```json
 {
   "table": "nointernet",
-  "auth": {
-    "user": "xxx",
-    "pass": "zzz"
-  },
   "devices": [
     {
       "mac": "cc:ee:aa:01:5d:d5",
@@ -37,3 +33,6 @@ Configure the hosts you want to block in `config.json`:
   ]
 }
 ```
+
+
+It makes use of https://github.com/it-slav/dhcpd-leases-parser, which dumps the dhcpd leases into a TSV format. This will/may help with finding the name of the blocked devices that have been off line for a while (they won't show up in the arp output).

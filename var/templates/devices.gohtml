@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>...</title>
+	<meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="color-scheme" content="light dark">
+        <title>PFUI</title>
         <style type="text/css">
         tr.banned td { color: red; }
         </style>
@@ -15,7 +16,7 @@
                 <th>Name</th>
                 <th>IP</th>
                 <th>Mac addr.</th>
-                <th>Banned</th>
+                <th></th>
                 <th></th>
             </tr>
         </thead>
@@ -25,14 +26,14 @@
                     <td>{{ .Name }}</td>
                     <td>{{ .IP }}</td>
                     <td>{{ .EthAddr }}</td>
-                    <td>{{ .Banned }}</td>
-                    <td><a href="" data-mac="{{ .EthAddr }}" data-status="{{.Banned}}">toggle</a></td>
+		    <td>{{if .Banned }}x{{end}}</td>
+		    <td><a href="" {{if ne .EthAddr ""}}data-mac="{{ .EthAddr }}"{{else}}data-ip="{{.IP}}"{{end}} data-status="{{.Banned}}">⏼</a></td>
                 </tr>
             {{ end }}
         </tbody>
     </table>
     </body>
-    <script type="text/javascript">
+    <script>
 	    window.addEventListener("load", (event) => {
             console.log("page is fully loaded");
             const toggle = async(params) => {
@@ -47,15 +48,24 @@
             document.querySelectorAll("a").forEach((a) => {
                 a.addEventListener("click", (e) => {
                     e.preventDefault();
-                    const device = e.target.getAttribute("data-mac");
+                    let query = "mac";
+                    let device = e.target.getAttribute("data-mac");
                     const st = e.target.getAttribute("data-status");
                     let op = "add";
+                    let params = new URLSearchParams();
+
                     if (st === "true") {
                         op = "delete";
+                        if (!device) {
+                            device = e.target.getAttribute("data-ip")
+                            query = "ip";
+			}
                     }
-                    console.log(device, ":", st, ":", op);
+                    params.append("op", op);
+                    params.append(query, device);
+                    //console.log("query:", query, "//", device, ":", st, ":", op);
 
-                    const params = new URLSearchParams({ op: op, mac:  device});
+                    //const params = new URLSearchParams({ op: op, query:  device});
                     toggle(params)
                         .then((res) => {
                             //console.log(res);

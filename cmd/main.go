@@ -40,7 +40,8 @@ func main() {
 	}
 
 	go func() {
-		if err := srv.ListenAndServe(); err != nil {
+		//if err := srv.ListenAndServe(); err != nil {
+		if err := srv.ListenAndServeTLS("var/certs/localhost.crt", "var/certs/localhost.key"); err != nil {
 			log.Fatal(err)
 		}
 	}()

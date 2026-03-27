@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"net"
 	"pfui"
 	"slices"
 )
@@ -24,26 +25,45 @@ func NewService(cfg pfui.Config) Service {
 }
 
 func (s Service) GetHosts(filtered bool) ([]pfui.Host, error) {
-	all, err := pfui.ExecArp()
+	var err error
+	hosts := []pfui.Host{}
+	if false && filtered {
+		//for k, v := range s.Cfg.Devices {
+		for _, d := range s.Cfg.Devices {
+			hosts = append(hosts, pfui.Host{
+				Name:    d.Name,
+				EthAddr: d.Mac,
+			})
+		}
+	} else {
+		hosts, err = pfui.ExecArp()
+	}
 	if err != nil {
 		return []pfui.Host{}, err
 	}
 
+	leases := pfui.LoadLeases()
 	pf := pfui.PF{}
 	banned_ips := []string{}
 	banned_ips, err = pf.TableShow(s.Cfg.PFTable)
 
 	out := []pfui.Host{}
-	var name string
-	var exists bool
-	for _, h := range all {
-		name, exists = s.devicesMap[h.EthAddr]
+	for _, h := range hosts {
+		name, exists := s.devicesMap[h.EthAddr]
 		if exists {
 			h.Name = name
+		} else {
+			l := leases.Find(map[string]string{"hw": h.EthAddr})
+			if l != nil {
+				h.Name = l.Name
+			}
 		}
-		// func Contains[S ~[]E, E comparable](s S, v E) bool
-		if slices.Contains(banned_ips, h.IP.String()) {
+
+		//func Index[S ~[]E, E comparable](s S, v E) int
+		idx := slices.Index(banned_ips, h.IP.String())
+		if idx >= 0 {
 			h.Banned = true
+			banned_ips = slices.Delete(banned_ips, idx, idx+1)
 		}
 		if filtered {
 			if exists {
@@ -52,6 +72,21 @@ func (s Service) GetHosts(filtered bool) ([]pfui.Host, error) {
 		} else {
 			out = append(out, h)
 		}
+	}
+
+	// add any left over banned ips
+	for _, bip := range banned_ips {
+
+		host := pfui.Host{
+			Name:   "????",
+			IP:     net.ParseIP(bip),
+			Banned: true,
+		}
+		l := leases.Find(map[string]string{"ip": bip})
+		if l != nil {
+			host.Name = l.Name
+		}
+		out = append(out, host)
 	}
 
 	return out, nil

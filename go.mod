@@ -1,5 +1,8 @@
 module pfui
 
-go 1.23.2
+go 1.25
 
-require github.com/gorilla/mux v1.8.1 // indirect
+require (
+	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1 // indirect
+	github.com/gorilla/mux v1.8.1 // indirect
+)

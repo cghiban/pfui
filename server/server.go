@@ -4,9 +4,11 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
-	psui "pfui"
+	"pfui"
 	"pfui/service"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -53,7 +55,7 @@ func Devices(w http.ResponseWriter, r *http.Request, s service.Service, t *templ
 
 	data := struct {
 		Err   error
-		Hosts []psui.Host
+		Hosts []pfui.Host
 	}{
 		Err:   err,
 		Hosts: hosts,
@@ -70,9 +72,9 @@ func UpdateDevice(w http.ResponseWriter, r *http.Request, s service.Service, t *
 	op := q.Get("op")
 	mac := q.Get("mac")
 	found := false
-	var host psui.Host
+	var host pfui.Host
 
-	hosts, err := psui.ExecArp()
+	hosts, err := pfui.ExecArp()
 	if err != nil {
 		Error(w,
 			map[string]string{"status": "error", "msg": "can't retrieve the devices"},
@@ -87,6 +89,18 @@ func UpdateDevice(w http.ResponseWriter, r *http.Request, s service.Service, t *
 			found = true
 			host = h
 			break
+		}
+	}
+
+	if !found && op == "delete" {
+		if ip := q.Get("ip"); ip != "" {
+			// check banned ips
+			pf := pfui.PF{}
+			banned_ips, _ := pf.TableShow(s.Cfg.PFTable)
+			if slices.Contains(banned_ips, ip) {
+				found = true
+				host = pfui.Host{IP: net.ParseIP(ip)}
+			}
 		}
 	}
 
@@ -109,17 +123,17 @@ func UpdateDevice(w http.ResponseWriter, r *http.Request, s service.Service, t *
 	Success(w, map[string]string{"status": "ok"}, http.StatusOK)
 }
 
-func NewRouter(h Handlers, cfg psui.Config) *mux.Router {
+func NewRouter(h Handlers, cfg pfui.Config) *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/ping", h.Ping).Methods("GET")
 
 	auth := cfg.Auth
 	if auth != nil && auth.User != "" && auth.Pass != "" {
-		router.HandleFunc("/psui/devices", basicAuth(auth.User, auth.Pass)(h.DevicesHandler)).Methods("GET")
-		router.HandleFunc("/psui/devices", basicAuth(auth.User, auth.Pass)(h.UpdateDeviceHandler)).Methods("PUT")
+		router.HandleFunc("/pfui/devices", basicAuth(auth.User, auth.Pass)(h.DevicesHandler)).Methods("GET")
+		router.HandleFunc("/pfui/devices", basicAuth(auth.User, auth.Pass)(h.UpdateDeviceHandler)).Methods("PUT")
 	} else {
-		router.HandleFunc("/psui/devices", h.DevicesHandler).Methods("GET")
-		router.HandleFunc("/psui/devices", h.UpdateDeviceHandler).Methods("PUT")
+		router.HandleFunc("/pfui/devices", h.DevicesHandler).Methods("GET")
+		router.HandleFunc("/pfui/devices", h.UpdateDeviceHandler).Methods("PUT")
 	}
 
 	router.Use(loggingMiddleware)
